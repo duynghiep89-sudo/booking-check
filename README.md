@@ -4,9 +4,9 @@ Webapp tra cứu booking: nhập số booking + hãng tàu, đối chiếu Excel
 
 ## Link webapp
 
-Sau khi GitHub Pages chạy xong:
+**https://booking-check-rho.vercel.app**
 
-**https://duynghiep89-sudo.github.io/booking-check/**
+GitHub Pages (dự phòng): https://duynghiep89-sudo.github.io/booking-check/
 
 Bản web dùng để nhập liệu, Excel và mở trang hãng. Tự điền ETD / tàu / chuyến / POD (Chrome) chỉ khi chạy trên máy:
 
