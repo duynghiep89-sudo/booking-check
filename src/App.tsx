@@ -257,10 +257,20 @@ function App() {
     <div className="shell">
       <aside className="sidebar">
         <div className="brand">
-          <span className="mark">BC</span>
+          <span className="mark" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M3 17.5 12 6l9 11.5H3Z"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinejoin="round"
+              />
+              <path d="M7.5 17.5h9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </span>
           <div>
             <strong>Booking Check</strong>
-            <small>Tra cứu lịch trình tàu</small>
+            <small>Lịch trình tàu</small>
           </div>
         </div>
         <nav>
@@ -271,6 +281,7 @@ function App() {
             Hãng tàu
           </button>
         </nav>
+        <p className="sidebar-note">Công cụ nội bộ phòng xuất nhập khẩu</p>
       </aside>
 
       <main className="main">
@@ -278,16 +289,25 @@ function App() {
           <>
             <header className="page-head">
               <div>
+                <p className="eyebrow">Vận tải biển</p>
                 <h1>Check booking</h1>
                 <p>
-                  Mọi hãng đều cùng quy trình: mở Chrome, vào trang tracking, nhập booking, đọc ETD / tàu / chuyến /
-                  POD rồi đóng tab.
+                  Nhập số booking và hãng tàu. Hệ thống mở trang tracking, đọc ETD, tên tàu, số chuyến và cảng đến.
                 </p>
               </div>
               <div className="kpi">
-                <span>{stats.total} booking</span>
-                <span>{stats.checking} đang check</span>
-                <span>{stats.found} có kết quả</span>
+                <div>
+                  <em>{stats.total}</em>
+                  <span>Booking</span>
+                </div>
+                <div>
+                  <em>{stats.checking}</em>
+                  <span>Đang check</span>
+                </div>
+                <div>
+                  <em>{stats.found}</em>
+                  <span>Có kết quả</span>
+                </div>
               </div>
             </header>
 
@@ -355,11 +375,14 @@ function App() {
             <section className="results">
               <div className="results-head">
                 <h2>Kết quả tra cứu</h2>
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Lọc booking..."
-                />
+                <label className="filter">
+                  Tìm
+                  <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Booking, hãng, tàu, cảng..."
+                  />
+                </label>
               </div>
               <div className="table-wrap">
                 <table>
@@ -379,7 +402,8 @@ function App() {
                     {visibleRows.length === 0 ? (
                       <tr>
                         <td colSpan={8} className="empty">
-                          Chưa có booking. Nhập số booking và hãng tàu rồi bấm Kiểm tra.
+                          <strong>Chưa có booking</strong>
+                          Nhập số booking, chọn hãng tàu rồi bấm Kiểm tra.
                         </td>
                       </tr>
                     ) : (
@@ -431,10 +455,10 @@ function App() {
           <>
             <header className="page-head">
               <div>
+                <p className="eyebrow">Danh mục</p>
                 <h1>Hãng tàu</h1>
                 <p>
-                  Nếu hãng bắt đăng nhập (ví dụ MSC), bật “Cần đăng nhập” rồi lưu tài khoản và mật khẩu. API key
-                  vẫn là ô riêng, chỉ dùng khi có key chính thức.
+                  Bật “Cần đăng nhập” nếu web hãng yêu cầu tài khoản. API key chỉ dùng khi có key chính thức.
                 </p>
               </div>
               <button
@@ -450,34 +474,49 @@ function App() {
 
             {error && page === 'carriers' ? <p className="error">{error}</p> : null}
 
-            <form className="carrier-form" onSubmit={saveCarrier}>
-              <input
-                value={carrierDraft.name}
-                onChange={(event) => setCarrierDraft((d) => ({ ...d, name: event.target.value }))}
-                placeholder="Tên hãng"
-              />
-              <input
-                value={carrierDraft.code}
-                onChange={(event) => setCarrierDraft((d) => ({ ...d, code: event.target.value }))}
-                placeholder="Mã SCAC"
-              />
-              <input
-                value={carrierDraft.aliasesText}
-                onChange={(event) => setCarrierDraft((d) => ({ ...d, aliasesText: event.target.value }))}
-                placeholder="Tên thường gọi, cách nhau bằng dấu phẩy"
-              />
-              <input
-                value={carrierDraft.trackingUrlTemplate}
-                onChange={(event) =>
-                  setCarrierDraft((d) => ({ ...d, trackingUrlTemplate: event.target.value }))
-                }
-                placeholder="Link tracking, dùng {booking}"
-              />
-              <input
-                value={carrierDraft.apiKey}
-                onChange={(event) => setCarrierDraft((d) => ({ ...d, apiKey: event.target.value }))}
-                placeholder="API key (không bắt buộc)"
-              />
+            <form className="carrier-form card" onSubmit={saveCarrier}>
+              <label>
+                Tên hãng
+                <input
+                  value={carrierDraft.name}
+                  onChange={(event) => setCarrierDraft((d) => ({ ...d, name: event.target.value }))}
+                  placeholder="MSC"
+                />
+              </label>
+              <label>
+                Mã SCAC
+                <input
+                  value={carrierDraft.code}
+                  onChange={(event) => setCarrierDraft((d) => ({ ...d, code: event.target.value }))}
+                  placeholder="MSCU"
+                />
+              </label>
+              <label>
+                Tên thường gọi
+                <input
+                  value={carrierDraft.aliasesText}
+                  onChange={(event) => setCarrierDraft((d) => ({ ...d, aliasesText: event.target.value }))}
+                  placeholder="Cách nhau bằng dấu phẩy"
+                />
+              </label>
+              <label className="wide">
+                Link tracking
+                <input
+                  value={carrierDraft.trackingUrlTemplate}
+                  onChange={(event) =>
+                    setCarrierDraft((d) => ({ ...d, trackingUrlTemplate: event.target.value }))
+                  }
+                  placeholder="Dùng {booking} trong đường dẫn"
+                />
+              </label>
+              <label>
+                API key
+                <input
+                  value={carrierDraft.apiKey}
+                  onChange={(event) => setCarrierDraft((d) => ({ ...d, apiKey: event.target.value }))}
+                  placeholder="Không bắt buộc"
+                />
+              </label>
               <label className="login-toggle">
                 <input
                   type="checkbox"
@@ -490,26 +529,34 @@ function App() {
               </label>
               {carrierDraft.requiresLogin ? (
                 <div className="carrier-login">
-                  <input
-                    value={carrierDraft.loginUser}
-                    onChange={(event) => setCarrierDraft((d) => ({ ...d, loginUser: event.target.value }))}
-                    placeholder="Tài khoản / email"
-                    autoComplete="username"
-                  />
-                  <input
-                    type="password"
-                    value={carrierDraft.loginPassword}
-                    onChange={(event) =>
-                      setCarrierDraft((d) => ({ ...d, loginPassword: event.target.value }))
-                    }
-                    placeholder="Mật khẩu"
-                    autoComplete="current-password"
-                  />
+                  <label>
+                    Tài khoản
+                    <input
+                      value={carrierDraft.loginUser}
+                      onChange={(event) => setCarrierDraft((d) => ({ ...d, loginUser: event.target.value }))}
+                      placeholder="Email hoặc mã khách hàng"
+                      autoComplete="username"
+                    />
+                  </label>
+                  <label>
+                    Mật khẩu
+                    <input
+                      type="password"
+                      value={carrierDraft.loginPassword}
+                      onChange={(event) =>
+                        setCarrierDraft((d) => ({ ...d, loginPassword: event.target.value }))
+                      }
+                      placeholder="Mật khẩu web hãng"
+                      autoComplete="current-password"
+                    />
+                  </label>
                 </div>
               ) : null}
-              <button type="submit" className="btn primary">
-                {carrierDraft.id ? 'Lưu' : 'Thêm'}
-              </button>
+              <div className="form-actions">
+                <button type="submit" className="btn primary">
+                  {carrierDraft.id ? 'Lưu hãng' : 'Thêm hãng'}
+                </button>
+              </div>
             </form>
 
             <div className="table-wrap card">
