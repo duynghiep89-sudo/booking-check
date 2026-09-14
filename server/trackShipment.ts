@@ -534,7 +534,7 @@ async function fillBookingAndSearch(page: import('playwright').Page, bookingNo: 
   await page.getByRole('radio', { name: /booking/i }).first().click({ timeout: 3000 }).catch(() => {})
   await page
     .getByRole('combobox', { name: /search by|track by|type/i })
-    .selectOption({ label: /^booking/i })
+    .selectOption({ label: 'Booking' })
     .catch(() => {})
 
   const box = page
