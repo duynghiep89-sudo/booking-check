@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Booking Check Helper",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Mở cửa sổ Chrome hãng tàu, điền booking và trả ETD / tàu / chuyến / POD cho Booking Check.",
   "permissions": ["tabs", "windows", "scripting", "storage"],
   "host_permissions": [

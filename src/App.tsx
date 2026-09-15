@@ -51,7 +51,10 @@ function dash(value: string) {
 }
 
 function trackingTabUrl(row: BookingRow) {
-  return stripBookingFromTrackingUrl(row.carrier?.trackingUrlTemplate || row.trackingUrl)
+  return stripBookingFromTrackingUrl(
+    row.carrier?.trackingUrlTemplate || row.trackingUrl,
+    row.bookingNo,
+  )
 }
 
 function statusLabel(row: BookingRow) {
@@ -174,7 +177,10 @@ function App() {
           bookingNo: current.bookingNo,
           carrierId: current.carrier?.id,
           carrierCode: current.carrier?.code,
-          trackingUrl: current.trackingUrl,
+          trackingUrl: stripBookingFromTrackingUrl(
+            current.carrier?.trackingUrlTemplate || current.trackingUrl,
+            current.bookingNo,
+          ),
           apiKey: current.carrier?.apiKey,
           requiresLogin: current.carrier?.requiresLogin,
           loginUser: current.carrier?.loginUser,

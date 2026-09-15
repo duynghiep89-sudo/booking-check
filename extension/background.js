@@ -2,18 +2,66 @@ function emptyResult(status, message) {
   return { etd: '', vessel: '', voyage: '', pod: '', status, message }
 }
 
+function stripBookingFromTrackingUrl(template, bookingNo = '') {
+  const raw = String(template || '').trim()
+  if (!raw) return raw
+  const booking = String(bookingNo || '').trim()
+  try {
+    const url = new URL(raw.replaceAll('{booking}', ''))
+    const dropKeys = [
+      'booking',
+      'bookingno',
+      'blno',
+      'number',
+      'numbers',
+      'no',
+      'reference',
+      'searchby',
+      'search',
+      'searchnumber',
+      'searchtype',
+      'tracking-number',
+      'trackingnumber',
+      'trackingtype',
+      'params',
+      'type',
+    ]
+    for (const key of [...url.searchParams.keys()]) {
+      const value = url.searchParams.get(key) ?? ''
+      if (
+        dropKeys.includes(key.toLowerCase()) ||
+        !value ||
+        value.includes('{booking}') ||
+        (booking && value.toLowerCase() === booking.toLowerCase())
+      ) {
+        url.searchParams.delete(key)
+      }
+    }
+    url.pathname = url.pathname.replace(/\/tracking\/[^/]+$/i, '/tracking')
+    if (booking) {
+      url.pathname = url.pathname.replace(
+        new RegExp(`/${booking.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/?$`, 'i'),
+        '/',
+      )
+    }
+    url.hash = ''
+    const search = url.searchParams.toString()
+    return `${url.origin}${url.pathname.replace(/\/$/, '') || '/'}${search ? `?${search}` : ''}`
+  } catch {
+    return raw.replaceAll('{booking}', '').replace(/\?.*$/, '').replace(/\/+$/, '')
+  }
+}
+
 function landingUrl(payload) {
-  const raw = String(payload.trackingUrl || '').trim()
-  if (raw && !/google\.com/i.test(raw)) return raw.replace(/\{booking\}/gi, '')
   const id = String(payload.carrierId || '').toLowerCase()
-  if (id === 'cma-cgm') return 'https://www.cma-cgm.com/ebusiness/tracking'
-  if (id === 'msc') return 'https://www.msc.com/en/track-a-shipment'
-  if (id === 'cosco') return 'https://elines.coscoshipping.com/ebusiness/cargoTracking'
-  if (id === 'one') return 'https://www.one-line.com/one-ecom/manage-shipment/cargo-tracking'
-  if (id === 'zim') return 'https://www.zim.com/tools/track-a-shipment'
-  if (id === 'maersk') return 'https://www.maersk.com/tracking'
-  if (id === 'evergreen') return 'https://ct.shipmentlink.com/servlet/TDB1_CargoTracking.do'
-  return raw || ''
+  if (id === 'cma-cgm' || id === 'cmdu') return 'https://www.cma-cgm.com/ebusiness/tracking'
+  if (id === 'msc' || id === 'mscu') return 'https://www.msc.com/en/track-a-shipment'
+  if (id === 'cosco' || id === 'cosu') return 'https://elines.coscoshipping.com/ebusiness/cargoTracking'
+  if (id === 'one' || id === 'oney') return 'https://www.one-line.com/one-ecom/manage-shipment/cargo-tracking'
+  if (id === 'zim' || id === 'zimu') return 'https://www.zim.com/tools/track-a-shipment'
+  if (id === 'maersk' || id === 'maeu') return 'https://www.maersk.com/tracking'
+  if (id === 'evergreen' || id === 'eglv') return 'https://ct.shipmentlink.com/servlet/TDB1_CargoTracking.do'
+  return stripBookingFromTrackingUrl(payload.trackingUrl, payload.bookingNo)
 }
 
 function waitTabComplete(tabId, timeoutMs = 45000) {
@@ -64,7 +112,9 @@ async function trackWithTab(payload) {
   if (!bookingNo) return emptyResult('error', 'Thiếu số booking.')
 
   const url = landingUrl(payload)
-  if (!url) return emptyResult('error', 'Thiếu URL tracking của hãng tàu.')
+  if (!url || /google\.com/i.test(url)) {
+    return emptyResult('error', 'Thiếu URL tracking của hãng tàu.')
+  }
 
   let tabId
   try {

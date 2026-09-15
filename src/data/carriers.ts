@@ -108,9 +108,10 @@ export const DEFAULT_CARRIERS: Carrier[] = [
   },
 ]
 
-export function stripBookingFromTrackingUrl(template: string): string {
+export function stripBookingFromTrackingUrl(template: string, bookingNo = ''): string {
   const raw = template.trim()
   if (!raw) return raw
+  const booking = bookingNo.trim()
   try {
     const url = new URL(raw.replaceAll('{booking}', ''))
     const dropKeys = [
@@ -123,6 +124,8 @@ export function stripBookingFromTrackingUrl(template: string): string {
       'reference',
       'searchby',
       'search',
+      'searchnumber',
+      'searchtype',
       'tracking-number',
       'trackingnumber',
       'trackingtype',
@@ -134,12 +137,18 @@ export function stripBookingFromTrackingUrl(template: string): string {
       if (
         dropKeys.includes(key.toLowerCase()) ||
         !value ||
-        value.includes('{booking}')
+        value.includes('{booking}') ||
+        (booking && value.toLowerCase() === booking.toLowerCase())
       ) {
         url.searchParams.delete(key)
       }
     }
-    url.pathname = url.pathname.replace(/\/tracking\/[^/]+$/i, '/tracking')
+    url.pathname = url.pathname
+      .replace(/\/tracking\/[^/]+$/i, '/tracking')
+      .replace(/\/track(?:ing)?\/[^/]+$/i, (m) => m.replace(/\/[^/]+$/, ''))
+    if (booking) {
+      url.pathname = url.pathname.replace(new RegExp(`/${booking.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/?$`, 'i'), '/')
+    }
     url.hash = ''
     const search = url.searchParams.toString()
     return `${url.origin}${url.pathname.replace(/\/$/, '') || '/'}${search ? `?${search}` : ''}`
@@ -148,8 +157,8 @@ export function stripBookingFromTrackingUrl(template: string): string {
   }
 }
 
-export function buildTrackingUrl(template: string, _bookingNo?: string): string {
-  return stripBookingFromTrackingUrl(template)
+export function buildTrackingUrl(template: string, bookingNo?: string): string {
+  return stripBookingFromTrackingUrl(template, bookingNo)
 }
 
 export function inferGenericSearchUrl(
