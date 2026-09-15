@@ -1,6 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
-import { trackShipment } from './trackShipment.ts'
 
 function readBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -44,6 +43,7 @@ export function trackingApiPlugin(): Plugin {
         loginUser?: string
         loginPassword?: string
       }
+      const { trackShipment } = await import('./trackShipment.ts')
       const result = await trackShipment({
         bookingNo: body.bookingNo ?? '',
         carrierId: body.carrierId,

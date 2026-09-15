@@ -31,18 +31,14 @@ export function loadCarriers(): Carrier[] {
         loginUser: typeof item.loginUser === 'string' ? item.loginUser : '',
         loginPassword: typeof item.loginPassword === 'string' ? item.loginPassword : '',
       }
+      const fallback = DEFAULT_CARRIERS.find((carrier) => carrier.id === next.id)
       if (
-        next.id === 'cma-cgm' &&
-        next.trackingUrlTemplate.includes('SearchType=Booking')
+        fallback &&
+        /\{booking\}|[?&](number|numbers|no|blno|bookingNo|booking|tracking-number|Reference|params|trackingType)=|\/tracking\/[^/?]+$|ecomm\.one-line/i.test(
+          next.trackingUrlTemplate,
+        )
       ) {
-        next.trackingUrlTemplate =
-          'https://www.cma-cgm.com/ebusiness/tracking/search?SearchBy=Reference&Reference={booking}&search=Search'
-      }
-      if (next.id === 'msc' && /agencyQuery=/.test(next.trackingUrlTemplate)) {
-        next.trackingUrlTemplate = 'https://www.msc.com/en/track-a-shipment'
-      }
-      if (next.id === 'evergreen' && /TYPE=|NO=/.test(next.trackingUrlTemplate)) {
-        next.trackingUrlTemplate = 'https://ct.shipmentlink.com/servlet/TDB1_CargoTracking.do'
+        next.trackingUrlTemplate = fallback.trackingUrlTemplate
       }
       return next
     })

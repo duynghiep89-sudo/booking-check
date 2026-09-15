@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { DEFAULT_CARRIERS, type Carrier } from './data/carriers'
+import { DEFAULT_CARRIERS, stripBookingFromTrackingUrl, type Carrier } from './data/carriers'
 import { buildBookingRow, rematchBookings } from './lib/bookings'
 import { loadCarriers, newCarrierId, parseAliases, saveCarriers } from './lib/carrierStore'
 import { downloadExcelTemplate, parseBookingWorkbook } from './lib/parseExcel'
@@ -51,12 +51,7 @@ function dash(value: string) {
 }
 
 function trackingTabUrl(row: BookingRow) {
-  const id = (row.carrier?.id ?? '').toLowerCase()
-  if (id === 'msc' || row.carrier?.code === 'MSCU') {
-    const raw = `trackingNumber=${row.bookingNo.trim()}&trackingMode=1`
-    return `https://www.msc.com/en/track-a-shipment?params=${btoa(raw)}`
-  }
-  return row.trackingUrl
+  return stripBookingFromTrackingUrl(row.carrier?.trackingUrlTemplate || row.trackingUrl)
 }
 
 function openTrackingWindow(row: BookingRow) {
@@ -131,7 +126,7 @@ function App() {
   async function runChecks(targets: BookingRow[]) {
     const queue = targets.filter((row) => row.bookingNo)
     const hosted = !import.meta.env.DEV
-    if (queue.length === 1 && queue[0]) {
+    if (hosted && queue.length === 1 && queue[0]) {
       openTrackingWindow(queue[0])
     }
     const limit = 1
@@ -224,7 +219,6 @@ function App() {
     setRows((current) => [row, ...current])
     setBookingNo('')
     setCarrierRaw('')
-    await runChecks([row])
   }
 
   async function handleFile(file: File) {
@@ -232,7 +226,6 @@ function App() {
     try {
       const parsed = parseBookingWorkbook(await file.arrayBuffer(), carriers)
       setRows((current) => [...parsed, ...current])
-      await runChecks(parsed)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Không đọc được file Excel.')
     }
@@ -263,9 +256,15 @@ function App() {
     setError('')
     setCarriers((current) => {
       if (!carrierDraft.id) return [...current, next]
-      return current.map((item) => (item.id === next.id ? next : item))
+      return current.map((item) => {
+        if (item.id !== next.id) return item
+        return {
+          ...next,
+          loginPassword: next.loginPassword || item.loginPassword || '',
+        }
+      })
     })
-    setCarrierDraft(emptyCarrierDraft)
+    setCarrierDraft(emptyCarrierDraft())
   }
 
   return (
@@ -307,8 +306,8 @@ function App() {
                 <p className="eyebrow">Vận tải biển</p>
                 <h1>Check booking</h1>
                 <p>
-                  Mỗi lần kiểm tra sẽ mở một cửa sổ mới trang hãng. Trên máy bạn (npm run dev), Chrome còn tự nhập
-                  booking và đọc ETD / tàu / chuyến / POD.
+                  Tải Excel để đưa booking vào bảng, rồi bấm Chạy check. Trên máy bạn Chrome mở từng hãng, nhập booking
+                  và điền ETD / tàu / chuyến / POD. Bản web Vercel chỉ mở trang hãng.
                 </p>
               </div>
               <div className="kpi">
@@ -353,8 +352,8 @@ function App() {
                     ))}
                   </select>
                 </label>
-                <button type="submit" className="btn primary">
-                  Kiểm tra
+                <button type="submit" className="btn">
+                  Thêm vào bảng
                 </button>
               </form>
               <div className="check-extra">
@@ -366,11 +365,19 @@ function App() {
                 </button>
                 <button
                   type="button"
-                  className="btn"
+                  className="btn primary"
                   disabled={checking || rows.length === 0}
                   onClick={() => void runChecks(rows)}
                 >
-                  Check lại tất cả
+                  Chạy check
+                </button>
+                <button
+                  type="button"
+                  className="btn danger"
+                  disabled={checking || rows.length === 0}
+                  onClick={() => setRows([])}
+                >
+                  Xóa tất cả
                 </button>
                 <input
                   ref={fileRef}
@@ -419,7 +426,7 @@ function App() {
                       <tr>
                         <td colSpan={8} className="empty">
                           <strong>Chưa có booking</strong>
-                          Nhập số booking, chọn hãng tàu rồi bấm Kiểm tra.
+                          Tải Excel hoặc thêm từng số, rồi bấm Chạy check.
                         </td>
                       </tr>
                     ) : (
@@ -480,15 +487,28 @@ function App() {
                   Bật “Cần đăng nhập” nếu web hãng yêu cầu tài khoản. API key chỉ dùng khi có key chính thức.
                 </p>
               </div>
-              <button
-                type="button"
-                className="btn"
-                onClick={() =>
-                  setCarriers(DEFAULT_CARRIERS.map((item) => ({ ...item, aliases: [...item.aliases] })))
-                }
-              >
-                Khôi phục mặc định
-              </button>
+              <div className="page-head-actions">
+                <button
+                  type="button"
+                  className="btn primary"
+                  onClick={() => {
+                    setError('')
+                    setCarrierDraft(emptyCarrierDraft())
+                    document.getElementById('carrier-name')?.focus()
+                  }}
+                >
+                  Thêm hãng tàu mới
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() =>
+                    setCarriers(DEFAULT_CARRIERS.map((item) => ({ ...item, aliases: [...item.aliases] })))
+                  }
+                >
+                  Khôi phục mặc định
+                </button>
+              </div>
             </header>
 
             {error && page === 'carriers' ? <p className="error">{error}</p> : null}
@@ -497,6 +517,7 @@ function App() {
               <label>
                 Tên hãng
                 <input
+                  id="carrier-name"
                   value={carrierDraft.name}
                   onChange={(event) => setCarrierDraft((d) => ({ ...d, name: event.target.value }))}
                   placeholder="MSC"
@@ -525,7 +546,7 @@ function App() {
                   onChange={(event) =>
                     setCarrierDraft((d) => ({ ...d, trackingUrlTemplate: event.target.value }))
                   }
-                  placeholder="Dùng {booking} trong đường dẫn"
+                  placeholder="Trang tracking, không gắn số booking vào link"
                 />
               </label>
               <label>
@@ -572,8 +593,20 @@ function App() {
                 </div>
               ) : null}
               <div className="form-actions">
+                {carrierDraft.id ? (
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => {
+                      setError('')
+                      setCarrierDraft(emptyCarrierDraft())
+                    }}
+                  >
+                    Hủy sửa
+                  </button>
+                ) : null}
                 <button type="submit" className="btn primary">
-                  {carrierDraft.id ? 'Lưu hãng' : 'Thêm hãng'}
+                  {carrierDraft.id ? 'Lưu' : 'Thêm hãng tàu mới'}
                 </button>
               </div>
             </form>
