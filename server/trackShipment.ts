@@ -835,12 +835,13 @@ async function searchCmaAsBooking(page: import('playwright').Page, bookingNo: st
         const exact = [...document.querySelectorAll('label, span, button, a, div')].find(
           (el) => (el.textContent || '').trim() === 'Display Details',
         )
-        if (exact) {
+        if (exact instanceof HTMLElement) {
           exact.click()
           return
         }
         const boxes = [...document.querySelectorAll('input[type="checkbox"]')]
-        boxes[index]?.click()
+        const box = boxes[index]
+        if (box instanceof HTMLElement) box.click()
       }, attempt)
       const opened = await page
         .getByText(/PLANNED VESSEL DEPARTURE/i)
