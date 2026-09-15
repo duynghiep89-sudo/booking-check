@@ -185,14 +185,14 @@
       for (const label of labels) {
         const match = normalized.match(new RegExp(`${label}\\s*[:\\-]?\\s*([^\\n]{3,60})`, 'i'))
         const value = match?.[1]?.replace(/\s+/g, ' ').trim() ?? ''
-        if (value && !/^(n\/?a|-|ΓÇö)$/i.test(value)) return value
+        if (value && !/^(n\/?a|-|—)$/i.test(value)) return value
       }
       return ''
     }
     const vesselVoyage = normalized.match(/([A-Z][A-Z0-9 .'-]{3,40})\s*\(\s*([A-Z0-9]{3,14})\s*\)/)
     return {
       etd: labeled(['ETD', 'ATD', 'Estimated Departure', 'Departure Date']) || '',
-      vessel: labeled(['Vessel Name', 'Vessel', 'T├¬n t├áu']) || vesselVoyage?.[1]?.trim() || '',
+      vessel: labeled(['Vessel Name', 'Vessel', 'Tên tàu']) || vesselVoyage?.[1]?.trim() || '',
       voyage: labeled(['Voyage', 'Voy']) || vesselVoyage?.[2]?.trim() || '',
       pod: labeled(['Port of Discharge', 'POD', 'Destination']) || '',
     }

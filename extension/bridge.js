@@ -2,8 +2,10 @@
   const SOURCE_PAGE = 'booking-check'
   const SOURCE_EXT = 'booking-check-extension'
 
-  // B├ío trang web biß║┐t bridge ─æ├ú sß║╡n s├áng (sau khi F5).
-  window.postMessage({ source: SOURCE_EXT, type: 'READY', version: chrome.runtime.getManifest().version }, '*')
+  window.postMessage(
+    { source: SOURCE_EXT, type: 'READY', version: chrome.runtime.getManifest().version },
+    '*',
+  )
 
   window.addEventListener('message', (event) => {
     if (event.source !== window) return
@@ -44,7 +46,7 @@
                     voyage: '',
                     pod: '',
                     status: 'error',
-                    message: err.message || 'Extension kh├┤ng phß║ún hß╗ôi. V├áo chrome://extensions bß║Ñm Reload.',
+                    message: err.message || 'Extension khong phan hoi. Reload extension.',
                   }
                 : response,
             },
