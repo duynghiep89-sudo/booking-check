@@ -2,7 +2,7 @@
   const SOURCE_PAGE = 'booking-check'
   const SOURCE_EXT = 'booking-check-extension'
 
-  // Báo trang web biết bridge đã sẵn sàng (sau khi F5).
+  // B├ío trang web biß║┐t bridge ─æ├ú sß║╡n s├áng (sau khi F5).
   window.postMessage({ source: SOURCE_EXT, type: 'READY', version: chrome.runtime.getManifest().version }, '*')
 
   window.addEventListener('message', (event) => {
@@ -44,7 +44,7 @@
                     voyage: '',
                     pod: '',
                     status: 'error',
-                    message: err.message || 'Extension không phản hồi. Vào chrome://extensions bấm Reload.',
+                    message: err.message || 'Extension kh├┤ng phß║ún hß╗ôi. V├áo chrome://extensions bß║Ñm Reload.',
                   }
                 : response,
             },

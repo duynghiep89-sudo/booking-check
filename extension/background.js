@@ -2,87 +2,51 @@ function emptyResult(status, message) {
   return { etd: '', vessel: '', voyage: '', pod: '', status, message }
 }
 
-function stripBookingFromTrackingUrl(template, bookingNo = '') {
-  const raw = String(template || '').trim()
-  if (!raw) return raw
-  const booking = String(bookingNo || '').trim()
+function stripTrackingUrl(raw) {
+  const text = String(raw || '').trim()
+  if (!text) return ''
   try {
-    const url = new URL(raw.replaceAll('{booking}', ''))
-    const dropKeys = [
-      'booking',
-      'bookingno',
-      'blno',
-      'number',
-      'numbers',
-      'no',
-      'reference',
-      'searchby',
-      'search',
-      'searchnumber',
-      'searchtype',
-      'tracking-number',
-      'trackingnumber',
-      'trackingtype',
-      'params',
-      'type',
-    ]
+    const url = new URL(text.replaceAll('{booking}', ''))
     for (const key of [...url.searchParams.keys()]) {
       const value = url.searchParams.get(key) ?? ''
       if (
-        dropKeys.includes(key.toLowerCase()) ||
         !value ||
         value.includes('{booking}') ||
-        (booking && value.toLowerCase() === booking.toLowerCase())
+        /^(booking|bookingno|blno|number|numbers|no|reference|searchby|search|searchnumber|searchtype|tracking-number|trackingnumber|trackingtype|params|type)$/i.test(
+          key,
+        )
       ) {
         url.searchParams.delete(key)
       }
     }
     url.pathname = url.pathname.replace(/\/tracking\/[^/]+$/i, '/tracking')
-    if (booking) {
-      url.pathname = url.pathname.replace(
-        new RegExp(`/${booking.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/?$`, 'i'),
-        '/',
-      )
-    }
     url.hash = ''
     const search = url.searchParams.toString()
     return `${url.origin}${url.pathname.replace(/\/$/, '') || '/'}${search ? `?${search}` : ''}`
   } catch {
-    return raw.replaceAll('{booking}', '').replace(/\?.*$/, '').replace(/\/+$/, '')
+    return text.replaceAll('{booking}', '').replace(/\?.*$/, '')
   }
 }
 
 function landingUrl(payload) {
   const id = String(payload.carrierId || '').toLowerCase()
-  const code = String(payload.carrierCode || '').toLowerCase()
-  const raw = String(payload.trackingUrl || '')
-  const blob = `${id} ${code} ${raw}`.toLowerCase()
-
-  if (/cma|cmdu|cma-cgm\.com/.test(blob)) return 'https://www.cma-cgm.com/ebusiness/tracking'
-  if (/msc|mscu|msc\.com/.test(blob)) return 'https://www.msc.com/en/track-a-shipment'
-  if (/cosco|cosu|coscoshipping\.com/.test(blob)) {
-    return 'https://elines.coscoshipping.com/ebusiness/cargoTracking'
-  }
-  if (/\bone\b|oney|one-line\.com/.test(blob)) {
-    return 'https://www.one-line.com/one-ecom/manage-shipment/cargo-tracking'
-  }
-  if (/zim|zimu|zim\.com/.test(blob)) return 'https://www.zim.com/tools/track-a-shipment'
-  if (/maersk|maeu|maersk\.com/.test(blob)) return 'https://www.maersk.com/tracking'
-  if (/evergreen|eglv|shipmentlink\.com/.test(blob)) {
-    return 'https://ct.shipmentlink.com/servlet/TDB1_CargoTracking.do'
-  }
-  if (/hapag|hlcu|hapag-lloyd\.com/.test(blob)) {
+  const code = String(payload.carrierCode || '').toUpperCase()
+  if (id === 'cma-cgm' || code === 'CMDU') return 'https://www.cma-cgm.com/ebusiness/tracking'
+  if (id === 'msc' || code === 'MSCU') return 'https://www.msc.com/en/track-a-shipment'
+  if (id === 'cosco' || code === 'COSU') return 'https://elines.coscoshipping.com/ebusiness/cargoTracking'
+  if (id === 'evergreen' || code === 'EGLV') return 'https://ct.shipmentlink.com/servlet/TDB1_CargoTracking.do'
+  if (id === 'maersk' || code === 'MAEU') return 'https://www.maersk.com/tracking'
+  if (id === 'one' || code === 'ONEY') return 'https://www.one-line.com/one-ecom/manage-shipment/cargo-tracking'
+  if (id === 'zim' || code === 'ZIMU') return 'https://www.zim.com/tools/track-a-shipment'
+  if (id === 'hapag-lloyd' || code === 'HLCU') {
     return 'https://www.hapag-lloyd.com/en/online-business/track/track-by-booking-solution.html'
   }
-  if (/hmm|hdmu|hmm21\.com/.test(blob)) {
-    return 'https://www.hmm21.com/e-service/general/trackNTrace/TrackNTrace.do'
-  }
-  if (/yang|ymlu|yangming\.com/.test(blob)) {
+  if (id === 'hmm' || code === 'HDMU') return 'https://www.hmm21.com/e-service/general/trackNTrace/TrackNTrace.do'
+  if (id === 'yang-ming' || code === 'YMLU') {
     return 'https://www.yangming.com/e-service/Track_Trace/track_trace_cargo_tracking.aspx'
   }
-  if (/sitc|situ|sitcline\.com/.test(blob)) return 'https://www.sitcline.com/track-trace'
-
-  return stripBookingFromTrackingUrl(payload.trackingUrl, payload.bookingNo)
+  if (id === 'sitc' || code === 'SITU') return 'https://www.sitcline.com/track-trace'
+  return stripTrackingUrl(payload.trackingUrl)
 }
 
 function waitTabComplete(tabId, timeoutMs = 45000) {
@@ -91,7 +55,6 @@ function waitTabComplete(tabId, timeoutMs = 45000) {
       chrome.tabs.onUpdated.removeListener(onUpdated)
       reject(new Error('Tab load timeout'))
     }, timeoutMs)
-
     function onUpdated(id, info) {
       if (id === tabId && info.status === 'complete') {
         clearTimeout(timer)
@@ -99,7 +62,6 @@ function waitTabComplete(tabId, timeoutMs = 45000) {
         resolve()
       }
     }
-
     chrome.tabs.get(tabId, (tab) => {
       if (chrome.runtime.lastError) {
         clearTimeout(timer)
@@ -117,29 +79,17 @@ function waitTabComplete(tabId, timeoutMs = 45000) {
   })
 }
 
-async function openCarrierWindow(url) {
-  const win = await chrome.windows.create({
-    url,
-    focused: true,
-    type: 'normal',
-  })
-  const tabId = win.tabs?.[0]?.id
-  if (!tabId) throw new Error('Không mở được cửa sổ Chrome mới.')
-  return tabId
-}
-
 async function trackWithTab(payload) {
   const bookingNo = String(payload.bookingNo || '').trim()
   if (!bookingNo) return emptyResult('error', 'Thiếu số booking.')
-
   const url = landingUrl(payload)
-  if (!url || /google\.com/i.test(url)) {
-    return emptyResult('error', 'Thiếu URL tracking của hãng tàu.')
-  }
+  if (!url || /google\.com/i.test(url)) return emptyResult('error', 'Thiếu URL tracking của hãng tàu.')
 
-  let tabId
   try {
-    tabId = await openCarrierWindow(url)
+    const win = await chrome.windows.create({ url, focused: true, type: 'normal' })
+    const tabId = win.tabs?.[0]?.id
+    if (!tabId) return emptyResult('error', 'Không mở được cửa sổ Chrome mới.')
+
     await waitTabComplete(tabId)
     await new Promise((r) => setTimeout(r, 1500))
 
@@ -158,7 +108,6 @@ async function trackWithTab(payload) {
     })
 
     let text = runResults?.[0]?.result || ''
-
     if (/cosco/i.test(String(payload.carrierId || ''))) {
       const frameResults = await chrome.scripting.executeScript({
         target: { tabId, allFrames: true },
@@ -171,10 +120,7 @@ async function trackWithTab(payload) {
       target: { tabId },
       func: (carrierId, pageText) => {
         const parsed = globalThis.BookingCheckParsers.parseByCarrier(carrierId, pageText)
-        return {
-          ...parsed,
-          ok: globalThis.BookingCheckParsers.hasResult(parsed),
-        }
+        return { ...parsed, ok: globalThis.BookingCheckParsers.hasResult(parsed) }
       },
       args: [payload.carrierId || payload.carrierCode || '', text],
     })
@@ -186,7 +132,7 @@ async function trackWithTab(payload) {
     if (!parsed.ok) {
       return emptyResult(
         'error',
-        'Đã mở cửa sổ hãng nhưng chưa đọc được ETD/tàu. Cho phép cookie/login trên trang hãng rồi Check lại.',
+        'Đã mở cửa sổ hãng nhưng chưa đọc được ETD/tàu. Cho phép cookie/login rồi thử lại.',
       )
     }
     return {
@@ -195,7 +141,7 @@ async function trackWithTab(payload) {
       voyage: parsed.voyage || '',
       pod: parsed.pod || '',
       status: 'found',
-      message: 'Đã lấy qua Chrome extension (cửa sổ hãng).',
+      message: 'Đã lấy qua Chrome extension (bản ổn định).',
     }
   } catch (error) {
     return emptyResult('error', error instanceof Error ? error.message : 'Lỗi extension khi tra cứu.')
@@ -210,8 +156,4 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       sendResponse(emptyResult('error', error instanceof Error ? error.message : 'Lỗi extension.')),
     )
   return true
-})
-
-chrome.runtime.onInstalled.addListener(() => {
-  console.log('[Booking Check Helper] installed/updated', chrome.runtime.getManifest().version)
 })

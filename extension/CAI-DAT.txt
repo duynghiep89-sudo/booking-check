@@ -1,15 +1,12 @@
-Cài Booking Check Helper (Chrome) — bản 0.1.3
+Cài Booking Check Helper 0.2.0 (bản ổn định — parser lúc “tạm ổn rồi”)
 
-QUAN TRỌNG: dùng web
-  https://duynghiep89-sudo.github.io/booking-check/
-(không dùng Vercel nếu bản đó còn cũ)
+Local (Playwright): KHÔNG cần extension
+  http://localhost:5187/booking-check/
+  npm run dev
 
-1. Xóa extension cũ trong chrome://extensions
-2. Giải nén ZIP → Load unpacked → chọn thư mục có manifest.json (version 0.1.3)
-3. Mở link GitHub Pages ở trên → Ctrl+F5
-4. Đợi dòng xanh "Extension đã kết nối"
-5. Check — cửa sổ mở phải là trang landing (KHÔNG có số booking trên URL lúc mới mở)
+Internet: cần extension
+1. Giải nén ZIP → chrome://extensions → Developer mode → Load unpacked
+2. Chọn thư mục có manifest.json (version 0.2.0)
+3. Mở https://duynghiep89-sudo.github.io/booking-check/ → F5 → Check
 
-Máy có source: Load unpacked
-  ...\booking_check\extension
-rồi bấm Reload trên extension.
+Cửa sổ hãng mở landing SẠCH (không kèm số booking trên URL lúc mở).

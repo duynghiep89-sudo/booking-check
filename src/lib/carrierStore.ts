@@ -1,4 +1,4 @@
-import { DEFAULT_CARRIERS, stripBookingFromTrackingUrl, type Carrier } from '../data/carriers'
+import { DEFAULT_CARRIERS, type Carrier } from '../data/carriers'
 
 const STORAGE_KEY = 'booking-check.carriers.v1'
 
@@ -14,22 +14,6 @@ function isCarrier(value: unknown): value is Carrier {
   )
 }
 
-function normalizeCarrier(item: Carrier): Carrier {
-  const fallback = DEFAULT_CARRIERS.find((carrier) => carrier.id === item.id)
-  return {
-    ...item,
-    aliases: item.aliases.map((alias) => String(alias)),
-    apiKey: typeof item.apiKey === 'string' ? item.apiKey : '',
-    requiresLogin: Boolean(item.requiresLogin),
-    loginUser: typeof item.loginUser === 'string' ? item.loginUser : '',
-    loginPassword: typeof item.loginPassword === 'string' ? item.loginPassword : '',
-    // Hãng mặc định: luôn dùng landing sạch (không kèm booking).
-    trackingUrlTemplate: fallback
-      ? fallback.trackingUrlTemplate
-      : stripBookingFromTrackingUrl(item.trackingUrlTemplate),
-  }
-}
-
 export function loadCarriers(): Carrier[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -38,30 +22,33 @@ export function loadCarriers(): Carrier[] {
     if (!Array.isArray(parsed) || parsed.length === 0 || !parsed.every(isCarrier)) {
       return DEFAULT_CARRIERS.map((item) => ({ ...item, aliases: [...item.aliases] }))
     }
-
-    const loaded = parsed.map((item) => normalizeCarrier(item))
-    const seen = new Set(loaded.map((item) => item.id))
-    for (const fallback of DEFAULT_CARRIERS) {
-      if (!seen.has(fallback.id)) {
-        loaded.push({ ...fallback, aliases: [...fallback.aliases] })
+    return parsed.map((item) => {
+      const next = {
+        ...item,
+        aliases: item.aliases.map((alias) => String(alias)),
+        apiKey: typeof item.apiKey === 'string' ? item.apiKey : '',
+        requiresLogin: Boolean(item.requiresLogin),
+        loginUser: typeof item.loginUser === 'string' ? item.loginUser : '',
+        loginPassword: typeof item.loginPassword === 'string' ? item.loginPassword : '',
       }
-    }
-    return loaded
+      const fallback = DEFAULT_CARRIERS.find((carrier) => carrier.id === next.id)
+      if (
+        fallback &&
+        /\{booking\}|[?&](number|numbers|no|blno|bookingNo|booking|tracking-number|Reference|params|trackingType)=|\/tracking\/[^/?]+$|ecomm\.one-line/i.test(
+          next.trackingUrlTemplate,
+        )
+      ) {
+        next.trackingUrlTemplate = fallback.trackingUrlTemplate
+      }
+      return next
+    })
   } catch {
     return DEFAULT_CARRIERS.map((item) => ({ ...item, aliases: [...item.aliases] }))
   }
 }
 
 export function saveCarriers(carriers: Carrier[]) {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(
-      carriers.map((item) => ({
-        ...item,
-        trackingUrlTemplate: stripBookingFromTrackingUrl(item.trackingUrlTemplate),
-      })),
-    ),
-  )
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(carriers))
 }
 
 export function newCarrierId(name: string) {

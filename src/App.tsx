@@ -3,7 +3,7 @@ import { DEFAULT_CARRIERS, stripBookingFromTrackingUrl, type Carrier } from './d
 import { buildBookingRow, rematchBookings } from './lib/bookings'
 import { loadCarriers, newCarrierId, parseAliases, saveCarriers } from './lib/carrierStore'
 import { downloadExcelTemplate, parseBookingWorkbook } from './lib/parseExcel'
-import { requestTracking, pingExtension } from './lib/trackClient'
+import { requestTracking } from './lib/trackClient'
 import type { BookingRow } from './types'
 import './App.css'
 
@@ -50,16 +50,8 @@ function dash(value: string) {
   return value.trim() ? value : '—'
 }
 
-function resolveCarrierLanding(row: BookingRow) {
-  const fromDefault = DEFAULT_CARRIERS.find((carrier) => carrier.id === row.carrier?.id)
-  return stripBookingFromTrackingUrl(
-    fromDefault?.trackingUrlTemplate || row.carrier?.trackingUrlTemplate || row.trackingUrl,
-    row.bookingNo,
-  )
-}
-
 function trackingTabUrl(row: BookingRow) {
-  return resolveCarrierLanding(row)
+  return stripBookingFromTrackingUrl(row.carrier?.trackingUrlTemplate || row.trackingUrl)
 }
 
 function statusLabel(row: BookingRow) {
@@ -91,29 +83,7 @@ function App() {
   const [carrierRaw, setCarrierRaw] = useState('')
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
-  const [extensionOn, setExtensionOn] = useState<boolean | null>(null)
   const checking = rows.some((row) => row.checkStatus === 'checking')
-
-  useEffect(() => {
-    let alive = true
-    const check = async () => {
-      const ok = await pingExtension(900)
-      if (alive) setExtensionOn(ok)
-    }
-    void check()
-    const timer = window.setInterval(() => void check(), 4000)
-    const onReady = (event: MessageEvent) => {
-      if (event.data?.source === 'booking-check-extension' && event.data?.type === 'READY') {
-        setExtensionOn(true)
-      }
-    }
-    window.addEventListener('message', onReady)
-    return () => {
-      alive = false
-      clearInterval(timer)
-      window.removeEventListener('message', onReady)
-    }
-  }, [])
 
   useEffect(() => {
     saveCarriers(carriers)
@@ -182,7 +152,7 @@ function App() {
           bookingNo: current.bookingNo,
           carrierId: current.carrier?.id,
           carrierCode: current.carrier?.code,
-          trackingUrl: resolveCarrierLanding(current),
+          trackingUrl: current.trackingUrl,
           apiKey: current.carrier?.apiKey,
           requiresLogin: current.carrier?.requiresLogin,
           loginUser: current.carrier?.loginUser,
@@ -311,15 +281,8 @@ function App() {
                 <p className="eyebrow">Vận tải biển</p>
                 <h1>Check booking</h1>
                 <p>
-                  Tải Excel → Chạy check. Cần Chrome extension <strong>Booking Check Helper</strong> để mở cửa sổ
-                  hãng và tự điền ETD / tàu / chuyến / POD (kể cả trên Vercel).
-                </p>
-                <p className={`ext-status ${extensionOn ? 'on' : 'off'}`}>
-                  {extensionOn === null
-                    ? 'Đang kiểm tra extension…'
-                    : extensionOn
-                      ? 'Extension đã kết nối — có thể Check.'
-                      : 'Chưa thấy extension. Cài ZIP → chrome://extensions → Load unpacked → F5 trang này.'}
+                  Tải Excel để đưa booking vào bảng, rồi bấm Chạy check. Trên máy bạn Chrome mở từng hãng, nhập booking
+                  và điền ETD / tàu / chuyến / POD. Bản web Vercel chỉ mở trang hãng.
                 </p>
               </div>
               <div className="kpi">
