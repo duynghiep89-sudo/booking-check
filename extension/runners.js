@@ -182,15 +182,21 @@
   async function runMaersk(bookingNo) {
     await acceptCookies()
     clickByText(/^Allow all$/i)
-    // Nếu URL đã có số booking (/tracking/276227800), chỉ cần Track / đợi kết quả.
-    const already = location.pathname.includes(bookingNo) || document.querySelector('input')?.value === bookingNo
-    if (!already) {
-      const box = await waitForInput(/container|bill of lading|booking|shipment|tracking|bl\b/i, 20000)
-      if (box) fillInput(box, bookingNo)
-    }
-    clickByText(/^Track$/i)
-    const trackBtn = [...document.querySelectorAll('button')].find((el) => /^Track$/i.test((el.textContent || '').trim()))
+    await sleep(800)
+    // Luôn nhập trên form landing — không gắn booking vào URL.
+    const box =
+      (await waitForInput(/container|bill of lading|booking|shipment|tracking|bl\b/i, 25000)) ||
+      [...document.querySelectorAll('input[type="text"], input:not([type]), input[type="search"]')].find(
+        (el) => el instanceof HTMLInputElement && el.offsetParent !== null,
+      )
+    if (!box) return
+    fillInput(box, bookingNo)
+    await sleep(400)
+    const trackBtn = [...document.querySelectorAll('button')].find((el) =>
+      /^Track$/i.test((el.textContent || '').trim()),
+    )
     if (trackBtn instanceof HTMLElement) trackBtn.click()
+    else clickByText(/^Track$/i)
     await waitFor(
       () => /Vessel departure\s*\(|Shipment details|not found|no result/i.test(document.body.innerText),
       30000,

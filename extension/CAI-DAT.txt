@@ -1,10 +1,12 @@
-Cai Booking Check Helper 0.2.1
+Booking Check Helper 0.2.2
 
-Local (Playwright): http://localhost:5187/  — KHONG can extension
+Quy tac: MOI hang deu
+1. Mo trang landing (KHONG kem so booking tren URL)
+2. Nhap booking tren o search
+3. Bam Search/Track
+4. Doc ETD / tau / chuyen / POD
 
-Internet:
-1. Xoa extension cu
-2. Load unpacked thu muc co manifest.json (version 0.2.1)
-3. Mo https://duynghiep89-sudo.github.io/booking-check/ → Ctrl+F5 → Check
+Cai: chrome://extensions → xoa ban cu → Load unpacked → chon thu muc co manifest.json 0.2.2
+Web: https://duynghiep89-sudo.github.io/booking-check/ → Ctrl+F5
 
-Maersk: mo thang https://www.maersk.com/tracking/{booking} (dung cho hãng này).
+Local van dung Playwright: http://localhost:5187/

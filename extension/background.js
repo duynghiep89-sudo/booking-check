@@ -35,13 +35,7 @@ function landingUrl(payload) {
   if (id === 'msc' || code === 'MSCU') return 'https://www.msc.com/en/track-a-shipment'
   if (id === 'cosco' || code === 'COSU') return 'https://elines.coscoshipping.com/ebusiness/cargoTracking'
   if (id === 'evergreen' || code === 'EGLV') return 'https://ct.shipmentlink.com/servlet/TDB1_CargoTracking.do'
-  if (id === 'maersk' || code === 'MAEU') {
-    const booking = String(payload.bookingNo || '').trim()
-    // Maersk tự load kết quả khi có số trên path; landing trống thì form React khó điền.
-    return booking
-      ? `https://www.maersk.com/tracking/${encodeURIComponent(booking)}`
-      : 'https://www.maersk.com/tracking'
-  }
+  if (id === 'maersk' || code === 'MAEU') return 'https://www.maersk.com/tracking'
   if (id === 'one' || code === 'ONEY') return 'https://www.one-line.com/one-ecom/manage-shipment/cargo-tracking'
   if (id === 'zim' || code === 'ZIMU') return 'https://www.zim.com/tools/track-a-shipment'
   if (id === 'hapag-lloyd' || code === 'HLCU') {
@@ -97,7 +91,8 @@ async function trackWithTab(payload) {
     if (!tabId) return emptyResult('error', 'Không mở được cửa sổ Chrome mới.')
 
     await waitTabComplete(tabId)
-    await new Promise((r) => setTimeout(r, 1500))
+    // Cho SPA hãng render form search trước khi điền booking.
+    await new Promise((r) => setTimeout(r, 2500))
 
     await chrome.scripting.executeScript({
       target: { tabId },

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Booking Check Helper",
-  "version": "0.2.1",
-  "description": "Bản ổn định + Maersk mở /tracking/{booking} rồi đọc ETD/tàu.",
+  "version": "0.2.2",
+  "description": "Mo landing sach, nhap booking tren form roi Search/Track (moi hang).",
   "permissions": ["tabs", "windows", "scripting"],
   "host_permissions": [
     "http://localhost/*",
@@ -47,7 +47,7 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_title": "Booking Check Helper 0.2.1 (Maersk fix)",
+    "default_title": "Booking Check Helper 0.2.2",
     "default_icon": { "16": "icons/icon16.png", "48": "icons/icon48.png" }
   }
 }
