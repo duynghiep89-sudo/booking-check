@@ -50,11 +50,16 @@ function dash(value: string) {
   return value.trim() ? value : '—'
 }
 
-function trackingTabUrl(row: BookingRow) {
+function resolveCarrierLanding(row: BookingRow) {
+  const fromDefault = DEFAULT_CARRIERS.find((carrier) => carrier.id === row.carrier?.id)
   return stripBookingFromTrackingUrl(
-    row.carrier?.trackingUrlTemplate || row.trackingUrl,
+    fromDefault?.trackingUrlTemplate || row.carrier?.trackingUrlTemplate || row.trackingUrl,
     row.bookingNo,
   )
+}
+
+function trackingTabUrl(row: BookingRow) {
+  return resolveCarrierLanding(row)
 }
 
 function statusLabel(row: BookingRow) {
@@ -177,10 +182,7 @@ function App() {
           bookingNo: current.bookingNo,
           carrierId: current.carrier?.id,
           carrierCode: current.carrier?.code,
-          trackingUrl: stripBookingFromTrackingUrl(
-            current.carrier?.trackingUrlTemplate || current.trackingUrl,
-            current.bookingNo,
-          ),
+          trackingUrl: resolveCarrierLanding(current),
           apiKey: current.carrier?.apiKey,
           requiresLogin: current.carrier?.requiresLogin,
           loginUser: current.carrier?.loginUser,

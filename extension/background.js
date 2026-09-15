@@ -54,13 +54,34 @@ function stripBookingFromTrackingUrl(template, bookingNo = '') {
 
 function landingUrl(payload) {
   const id = String(payload.carrierId || '').toLowerCase()
-  if (id === 'cma-cgm' || id === 'cmdu') return 'https://www.cma-cgm.com/ebusiness/tracking'
-  if (id === 'msc' || id === 'mscu') return 'https://www.msc.com/en/track-a-shipment'
-  if (id === 'cosco' || id === 'cosu') return 'https://elines.coscoshipping.com/ebusiness/cargoTracking'
-  if (id === 'one' || id === 'oney') return 'https://www.one-line.com/one-ecom/manage-shipment/cargo-tracking'
-  if (id === 'zim' || id === 'zimu') return 'https://www.zim.com/tools/track-a-shipment'
-  if (id === 'maersk' || id === 'maeu') return 'https://www.maersk.com/tracking'
-  if (id === 'evergreen' || id === 'eglv') return 'https://ct.shipmentlink.com/servlet/TDB1_CargoTracking.do'
+  const code = String(payload.carrierCode || '').toLowerCase()
+  const raw = String(payload.trackingUrl || '')
+  const blob = `${id} ${code} ${raw}`.toLowerCase()
+
+  if (/cma|cmdu|cma-cgm\.com/.test(blob)) return 'https://www.cma-cgm.com/ebusiness/tracking'
+  if (/msc|mscu|msc\.com/.test(blob)) return 'https://www.msc.com/en/track-a-shipment'
+  if (/cosco|cosu|coscoshipping\.com/.test(blob)) {
+    return 'https://elines.coscoshipping.com/ebusiness/cargoTracking'
+  }
+  if (/\bone\b|oney|one-line\.com/.test(blob)) {
+    return 'https://www.one-line.com/one-ecom/manage-shipment/cargo-tracking'
+  }
+  if (/zim|zimu|zim\.com/.test(blob)) return 'https://www.zim.com/tools/track-a-shipment'
+  if (/maersk|maeu|maersk\.com/.test(blob)) return 'https://www.maersk.com/tracking'
+  if (/evergreen|eglv|shipmentlink\.com/.test(blob)) {
+    return 'https://ct.shipmentlink.com/servlet/TDB1_CargoTracking.do'
+  }
+  if (/hapag|hlcu|hapag-lloyd\.com/.test(blob)) {
+    return 'https://www.hapag-lloyd.com/en/online-business/track/track-by-booking-solution.html'
+  }
+  if (/hmm|hdmu|hmm21\.com/.test(blob)) {
+    return 'https://www.hmm21.com/e-service/general/trackNTrace/TrackNTrace.do'
+  }
+  if (/yang|ymlu|yangming\.com/.test(blob)) {
+    return 'https://www.yangming.com/e-service/Track_Trace/track_trace_cargo_tracking.aspx'
+  }
+  if (/sitc|situ|sitcline\.com/.test(blob)) return 'https://www.sitcline.com/track-trace'
+
   return stripBookingFromTrackingUrl(payload.trackingUrl, payload.bookingNo)
 }
 
