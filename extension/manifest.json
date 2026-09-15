@@ -1,13 +1,16 @@
 {
   "manifest_version": 3,
   "name": "Booking Check Helper",
-  "version": "0.1.0",
-  "description": "Mở tab hãng tàu, điền booking và trả ETD / tàu / chuyến / POD cho Booking Check.",
-  "permissions": ["tabs", "scripting", "storage"],
+  "version": "0.1.1",
+  "description": "Mở cửa sổ Chrome hãng tàu, điền booking và trả ETD / tàu / chuyến / POD cho Booking Check.",
+  "permissions": ["tabs", "windows", "scripting", "storage"],
   "host_permissions": [
     "http://localhost/*",
+    "http://localhost:*/*",
     "http://127.0.0.1/*",
+    "http://127.0.0.1:*/*",
     "https://booking-check-rho.vercel.app/*",
+    "https://*.vercel.app/*",
     "https://duynghiep89-sudo.github.io/*",
     "https://www.cma-cgm.com/*",
     "https://www.msc.com/*",
@@ -29,12 +32,16 @@
     {
       "matches": [
         "http://localhost/*",
+        "http://localhost:*/*",
         "http://127.0.0.1/*",
+        "http://127.0.0.1:*/*",
         "https://booking-check-rho.vercel.app/*",
+        "https://*.vercel.app/*",
         "https://duynghiep89-sudo.github.io/*"
       ],
       "js": ["bridge.js"],
-      "run_at": "document_start"
+      "run_at": "document_start",
+      "all_frames": false
     }
   ],
   "icons": {
@@ -43,7 +50,7 @@
     "128": "icons/icon128.png"
   },
   "action": {
-    "default_title": "Booking Check Helper",
+    "default_title": "Booking Check Helper đang bật",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png"

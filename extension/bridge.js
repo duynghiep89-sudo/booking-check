@@ -2,6 +2,9 @@
   const SOURCE_PAGE = 'booking-check'
   const SOURCE_EXT = 'booking-check-extension'
 
+  // Báo trang web biết bridge đã sẵn sàng (sau khi F5).
+  window.postMessage({ source: SOURCE_EXT, type: 'READY', version: chrome.runtime.getManifest().version }, '*')
+
   window.addEventListener('message', (event) => {
     if (event.source !== window) return
     const data = event.data
@@ -9,7 +12,12 @@
 
     if (data.type === 'PING') {
       window.postMessage(
-        { source: SOURCE_EXT, type: 'PONG', requestId: data.requestId },
+        {
+          source: SOURCE_EXT,
+          type: 'PONG',
+          requestId: data.requestId,
+          version: chrome.runtime.getManifest().version,
+        },
         '*',
       )
       return
@@ -36,7 +44,7 @@
                     voyage: '',
                     pod: '',
                     status: 'error',
-                    message: err.message || 'Extension không phản hồi.',
+                    message: err.message || 'Extension không phản hồi. Vào chrome://extensions bấm Reload.',
                   }
                 : response,
             },

@@ -13,7 +13,7 @@ function landingUrl(payload) {
   if (id === 'zim') return 'https://www.zim.com/tools/track-a-shipment'
   if (id === 'maersk') return 'https://www.maersk.com/tracking'
   if (id === 'evergreen') return 'https://ct.shipmentlink.com/servlet/TDB1_CargoTracking.do'
-  return raw || 'about:blank'
+  return raw || ''
 }
 
 function waitTabComplete(tabId, timeoutMs = 45000) {
@@ -48,27 +48,37 @@ function waitTabComplete(tabId, timeoutMs = 45000) {
   })
 }
 
+async function openCarrierWindow(url) {
+  const win = await chrome.windows.create({
+    url,
+    focused: true,
+    type: 'normal',
+  })
+  const tabId = win.tabs?.[0]?.id
+  if (!tabId) throw new Error('Không mở được cửa sổ Chrome mới.')
+  return tabId
+}
+
 async function trackWithTab(payload) {
   const bookingNo = String(payload.bookingNo || '').trim()
   if (!bookingNo) return emptyResult('error', 'Thiếu số booking.')
 
   const url = landingUrl(payload)
-  if (!url || url === 'about:blank') {
-    return emptyResult('error', 'Thiếu URL tracking của hãng tàu.')
-  }
+  if (!url) return emptyResult('error', 'Thiếu URL tracking của hãng tàu.')
 
-  const tab = await chrome.tabs.create({ url, active: true })
+  let tabId
   try {
-    await waitTabComplete(tab.id)
-    await new Promise((r) => setTimeout(r, 1200))
+    tabId = await openCarrierWindow(url)
+    await waitTabComplete(tabId)
+    await new Promise((r) => setTimeout(r, 1500))
 
     await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
+      target: { tabId },
       files: ['parsers.js', 'runners.js'],
     })
 
     const runResults = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
+      target: { tabId },
       func: async (carrierId, booking) => {
         await globalThis.BookingCheckRunners.runCarrier(carrierId, booking)
         return document.body?.innerText || ''
@@ -78,22 +88,16 @@ async function trackWithTab(payload) {
 
     let text = runResults?.[0]?.result || ''
 
-    // COSCO: also try same-origin frames
     if (/cosco/i.test(String(payload.carrierId || ''))) {
       const frameResults = await chrome.scripting.executeScript({
-        target: { tabId: tab.id, allFrames: true },
+        target: { tabId, allFrames: true },
         func: () => document.body?.innerText || '',
       })
       text = (frameResults || []).map((row) => row.result || '').join('\n')
     }
 
-    await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      files: ['parsers.js'],
-    })
-
     const parsedResults = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
+      target: { tabId },
       func: (carrierId, pageText) => {
         const parsed = globalThis.BookingCheckParsers.parseByCarrier(carrierId, pageText)
         return {
@@ -111,7 +115,7 @@ async function trackWithTab(payload) {
     if (!parsed.ok) {
       return emptyResult(
         'error',
-        'Đã mở tab hãng nhưng chưa đọc được ETD/tàu. Kiểm tra trang hãng (cookie/login) rồi thử lại.',
+        'Đã mở cửa sổ hãng nhưng chưa đọc được ETD/tàu. Cho phép cookie/login trên trang hãng rồi Check lại.',
       )
     }
     return {
@@ -120,7 +124,7 @@ async function trackWithTab(payload) {
       voyage: parsed.voyage || '',
       pod: parsed.pod || '',
       status: 'found',
-      message: 'Đã lấy qua Chrome extension (tab hãng).',
+      message: 'Đã lấy qua Chrome extension (cửa sổ hãng).',
     }
   } catch (error) {
     return emptyResult('error', error instanceof Error ? error.message : 'Lỗi extension khi tra cứu.')
@@ -128,11 +132,15 @@ async function trackWithTab(payload) {
 }
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (!message || message.type !== 'TRACK') return
+  if (!message || message.type !== 'TRACK') return false
   trackWithTab(message.payload || {})
     .then((result) => sendResponse(result))
     .catch((error) =>
       sendResponse(emptyResult('error', error instanceof Error ? error.message : 'Lỗi extension.')),
     )
   return true
+})
+
+chrome.runtime.onInstalled.addListener(() => {
+  console.log('[Booking Check Helper] installed/updated', chrome.runtime.getManifest().version)
 })

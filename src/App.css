@@ -118,6 +118,21 @@ h1, h2 { margin: 0; }
 h1 { font-size: 30px; letter-spacing: -0.04em; font-weight: 700; }
 h2 { font-size: 16px; font-weight: 700; }
 .page-head p { margin: 8px 0 0; color: var(--muted); max-width: 58ch; line-height: 1.5; }
+.ext-status {
+  margin-top: 10px !important;
+  padding: 8px 12px;
+  border-radius: 8px;
+  max-width: 62ch;
+  font-weight: 600;
+}
+.ext-status.on {
+  color: var(--ok);
+  background: rgba(15, 107, 69, 0.1);
+}
+.ext-status.off {
+  color: var(--danger);
+  background: rgba(180, 35, 24, 0.08);
+}
 
 .kpi {
   display: flex;

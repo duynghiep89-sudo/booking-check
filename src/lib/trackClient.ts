@@ -25,7 +25,7 @@ function empty(status: TrackResult['status'], message: string): TrackResult {
   return { etd: '', vessel: '', voyage: '', pod: '', status, message }
 }
 
-export function pingExtension(timeoutMs = 600): Promise<boolean> {
+export function pingExtension(timeoutMs = 900): Promise<boolean> {
   return new Promise((resolve) => {
     const requestId = crypto.randomUUID()
     const onMessage = (event: MessageEvent) => {
@@ -94,20 +94,17 @@ async function requestViaLocalApi(input: TrackInput): Promise<TrackResult | null
 }
 
 export async function requestTracking(input: TrackInput): Promise<TrackResult> {
+  // Ưu tiên extension nếu đã cài (cả Vercel lẫn local).
+  const hasExtension = await pingExtension()
+  if (hasExtension) return requestViaExtension(input)
+
   if (import.meta.env.DEV) {
     const local = await requestViaLocalApi(input)
     if (local) return local
   }
 
-  const hasExtension = await pingExtension()
-  if (hasExtension) return requestViaExtension(input)
-
-  if (!import.meta.env.DEV) {
-    return empty(
-      'error',
-      'Chưa có Chrome extension Booking Check Helper. Tải ZIP, giải nén, vào chrome://extensions → Developer mode → Load unpacked.',
-    )
-  }
-
-  return empty('error', 'Không kết nối được máy chủ tra cứu.')
+  return empty(
+    'error',
+    'Chưa kết nối Booking Check Helper. Cài extension → Reload extension → F5 trang web, đợi dòng “Extension đã kết nối”.',
+  )
 }

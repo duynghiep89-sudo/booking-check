@@ -3,7 +3,7 @@ import { DEFAULT_CARRIERS, stripBookingFromTrackingUrl, type Carrier } from './d
 import { buildBookingRow, rematchBookings } from './lib/bookings'
 import { loadCarriers, newCarrierId, parseAliases, saveCarriers } from './lib/carrierStore'
 import { downloadExcelTemplate, parseBookingWorkbook } from './lib/parseExcel'
-import { requestTracking } from './lib/trackClient'
+import { requestTracking, pingExtension } from './lib/trackClient'
 import type { BookingRow } from './types'
 import './App.css'
 
@@ -83,7 +83,29 @@ function App() {
   const [carrierRaw, setCarrierRaw] = useState('')
   const [error, setError] = useState('')
   const [query, setQuery] = useState('')
+  const [extensionOn, setExtensionOn] = useState<boolean | null>(null)
   const checking = rows.some((row) => row.checkStatus === 'checking')
+
+  useEffect(() => {
+    let alive = true
+    const check = async () => {
+      const ok = await pingExtension(900)
+      if (alive) setExtensionOn(ok)
+    }
+    void check()
+    const timer = window.setInterval(() => void check(), 4000)
+    const onReady = (event: MessageEvent) => {
+      if (event.data?.source === 'booking-check-extension' && event.data?.type === 'READY') {
+        setExtensionOn(true)
+      }
+    }
+    window.addEventListener('message', onReady)
+    return () => {
+      alive = false
+      clearInterval(timer)
+      window.removeEventListener('message', onReady)
+    }
+  }, [])
 
   useEffect(() => {
     saveCarriers(carriers)
@@ -281,8 +303,15 @@ function App() {
                 <p className="eyebrow">Vận tải biển</p>
                 <h1>Check booking</h1>
                 <p>
-                  Tải Excel để đưa booking vào bảng, rồi bấm Chạy check. Trên máy bạn Chrome mở từng hãng, nhập booking
-                  và điền ETD / tàu / chuyến / POD. Bản web Vercel chỉ mở trang hãng.
+                  Tải Excel → Chạy check. Cần Chrome extension <strong>Booking Check Helper</strong> để mở cửa sổ
+                  hãng và tự điền ETD / tàu / chuyến / POD (kể cả trên Vercel).
+                </p>
+                <p className={`ext-status ${extensionOn ? 'on' : 'off'}`}>
+                  {extensionOn === null
+                    ? 'Đang kiểm tra extension…'
+                    : extensionOn
+                      ? 'Extension đã kết nối — có thể Check.'
+                      : 'Chưa thấy extension. Cài ZIP → chrome://extensions → Load unpacked → F5 trang này.'}
                 </p>
               </div>
               <div className="kpi">

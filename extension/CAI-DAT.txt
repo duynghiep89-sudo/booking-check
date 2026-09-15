@@ -1,16 +1,17 @@
-Cài Booking Check Helper (Chrome)
+Cài Booking Check Helper (Chrome) — bản 0.1.1
 
-1. Giải nén ZIP này ra một thư mục cố định (ví dụ Desktop\booking-check-extension)
-2. Mở Chrome → chrome://extensions
-3. Bật Developer mode (góc phải)
-4. Bấm Load unpacked / Tải tiện ích đã giải nén
-5. Chọn đúng thư mục có file manifest.json (thư mục extension)
-6. Giữ extension Bật
+1. Xóa bản extension cũ (nếu có) trong chrome://extensions
+2. Giải nén ZIP ra thư mục cố định (ví dụ Desktop\booking-check-extension)
+3. Chrome → chrome://extensions → bật Developer mode
+4. Load unpacked → chọn thư mục CÓ file manifest.json
+5. Mở https://booking-check-rho.vercel.app (hoặc localhost) rồi F5 mạnh (Ctrl+F5)
+6. Trên trang phải thấy dòng xanh: "Extension đã kết nối"
+7. Mới bấm Check — sẽ mở CỬA SỔ Chrome mới và thao tác trang hãng
 
-Dùng:
-- Mở https://booking-check-rho.vercel.app (hoặc GitHub Pages / localhost)
-- Nhập booking → Check
-- Extension mở tab hãng, điền booking, trả ETD / tàu / chuyến / POD
+Nếu vẫn báo chưa kết nối:
+- Đúng trình duyệt Chrome (không dùng Edge/Firefox trừ khi cài riêng)
+- Không mở web trong cửa sổ Ẩn danh (hoặc cho phép extension chạy ẩn danh)
+- Bấm Reload trên extension rồi F5 lại trang web
 
-Cập nhật:
-- Tải ZIP mới → giải nén đè thư mục cũ → chrome://extensions → Reload
+Máy có source code: Load unpacked thẳng thư mục
+  ...\booking_check\extension
