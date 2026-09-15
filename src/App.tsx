@@ -54,12 +54,6 @@ function trackingTabUrl(row: BookingRow) {
   return stripBookingFromTrackingUrl(row.carrier?.trackingUrlTemplate || row.trackingUrl)
 }
 
-function openTrackingWindow(row: BookingRow) {
-  const url = trackingTabUrl(row)
-  if (!url || url.includes('google.com')) return
-  window.open(url, '_blank', 'noopener,noreferrer')
-}
-
 function statusLabel(row: BookingRow) {
   if (row.matchStatus === 'unknown') return 'Hãng lạ'
   switch (row.checkStatus) {
@@ -125,10 +119,6 @@ function App() {
 
   async function runChecks(targets: BookingRow[]) {
     const queue = targets.filter((row) => row.bookingNo)
-    const hosted = !import.meta.env.DEV
-    if (hosted && queue.length === 1 && queue[0]) {
-      openTrackingWindow(queue[0])
-    }
     const limit = 1
     let index = 0
 
@@ -152,21 +142,6 @@ function App() {
                     ...row,
                     checkStatus: 'error',
                     checkMessage: 'Hãng chưa có trong danh sách. Thêm hãng ở menu Hãng tàu.',
-                  }
-                : row,
-            ),
-          )
-          continue
-        }
-        if (hosted) {
-          setRows((list) =>
-            list.map((row) =>
-              row.id === current.id
-                ? {
-                    ...row,
-                    checkStatus: 'idle',
-                    checkMessage:
-                      'Bản web đã mở (hoặc dùng) trang hãng. Tự điền ETD/tàu/chuyến/POD chỉ khi chạy npm run dev trên máy bạn.',
                   }
                 : row,
             ),
