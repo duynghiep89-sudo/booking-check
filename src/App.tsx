@@ -50,6 +50,21 @@ function dash(value: string) {
   return value.trim() ? value : '—'
 }
 
+function trackingTabUrl(row: BookingRow) {
+  const id = (row.carrier?.id ?? '').toLowerCase()
+  if (id === 'msc' || row.carrier?.code === 'MSCU') {
+    const raw = `trackingNumber=${row.bookingNo.trim()}&trackingMode=1`
+    return `https://www.msc.com/en/track-a-shipment?params=${btoa(raw)}`
+  }
+  return row.trackingUrl
+}
+
+function openTrackingWindow(row: BookingRow) {
+  const url = trackingTabUrl(row)
+  if (!url || url.includes('google.com')) return
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+
 function statusLabel(row: BookingRow) {
   if (row.matchStatus === 'unknown') return 'Hãng lạ'
   switch (row.checkStatus) {
@@ -116,8 +131,8 @@ function App() {
   async function runChecks(targets: BookingRow[]) {
     const queue = targets.filter((row) => row.bookingNo)
     const hosted = !import.meta.env.DEV
-    if (hosted && queue.length === 1 && queue[0]?.trackingUrl && !queue[0].trackingUrl.includes('google.com')) {
-      window.open(queue[0].trackingUrl, '_blank', 'noopener,noreferrer')
+    if (queue.length === 1 && queue[0]) {
+      openTrackingWindow(queue[0])
     }
     const limit = 1
     let index = 0
@@ -292,7 +307,8 @@ function App() {
                 <p className="eyebrow">Vận tải biển</p>
                 <h1>Check booking</h1>
                 <p>
-                  Nhập số booking và hãng tàu. Hệ thống mở trang tracking, đọc ETD, tên tàu, số chuyến và cảng đến.
+                  Mỗi lần kiểm tra sẽ mở một cửa sổ mới trang hãng. Trên máy bạn (npm run dev), Chrome còn tự nhập
+                  booking và đọc ETD / tàu / chuyến / POD.
                 </p>
               </div>
               <div className="kpi">
@@ -407,7 +423,9 @@ function App() {
                         </td>
                       </tr>
                     ) : (
-                      visibleRows.map((row) => (
+                      visibleRows.map((row) => {
+                        const carrierHref = trackingTabUrl(row)
+                        return (
                         <tr key={row.id}>
                           <td className="mono">{row.bookingNo}</td>
                           <td>
@@ -427,8 +445,8 @@ function App() {
                           <td>{dash(row.voyage)}</td>
                           <td>{dash(row.pod)}</td>
                           <td className="actions">
-                            {row.trackingUrl ? (
-                              <a href={row.trackingUrl} target="_blank" rel="noreferrer">
+                            {carrierHref && !carrierHref.includes('google.com') ? (
+                              <a href={carrierHref} target="_blank" rel="noreferrer">
                                 Trang hãng
                               </a>
                             ) : null}
@@ -444,7 +462,8 @@ function App() {
                             </button>
                           </td>
                         </tr>
-                      ))
+                        )
+                      })
                     )}
                   </tbody>
                 </table>
