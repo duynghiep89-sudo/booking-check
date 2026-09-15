@@ -27,12 +27,32 @@
   function fillInput(el, value) {
     if (!(el instanceof HTMLInputElement) && !(el instanceof HTMLTextAreaElement)) return false
     el.focus()
-    el.value = ''
+    el.click()
+    const proto = Object.getPrototypeOf(el)
+    const desc = Object.getOwnPropertyDescriptor(proto, 'value')
+    desc?.set?.call(el, '')
     el.dispatchEvent(new Event('input', { bubbles: true }))
+    desc?.set?.call(el, value)
     el.value = value
-    el.dispatchEvent(new Event('input', { bubbles: true }))
+    el.dispatchEvent(new InputEvent('input', { bubbles: true, data: value, inputType: 'insertText' }))
     el.dispatchEvent(new Event('change', { bubbles: true }))
+    el.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: 'Enter' }))
     return true
+  }
+
+  async function waitForInput(match, timeoutMs = 20000) {
+    const start = Date.now()
+    while (Date.now() - start < timeoutMs) {
+      const box = [...document.querySelectorAll('input, textarea')].find((el) => {
+        if (!(el instanceof HTMLInputElement) && !(el instanceof HTMLTextAreaElement)) return false
+        if (el.offsetParent === null && el.type !== 'search') return false
+        const bag = `${el.getAttribute('aria-label') || ''} ${el.placeholder || ''} ${el.name || ''} ${el.id || ''}`
+        return match.test(bag)
+      })
+      if (box) return box
+      await sleep(400)
+    }
+    return null
   }
 
   async function acceptCookies() {
@@ -162,15 +182,20 @@
   async function runMaersk(bookingNo) {
     await acceptCookies()
     clickByText(/^Allow all$/i)
-    const box = [...document.querySelectorAll('input')].find((el) =>
-      /container|bill of lading|booking|shipment/i.test(
-        `${el.getAttribute('aria-label') || ''} ${el.placeholder || ''}`,
-      ),
-    )
-    if (box) fillInput(box, bookingNo)
+    // Nếu URL đã có số booking (/tracking/276227800), chỉ cần Track / đợi kết quả.
+    const already = location.pathname.includes(bookingNo) || document.querySelector('input')?.value === bookingNo
+    if (!already) {
+      const box = await waitForInput(/container|bill of lading|booking|shipment|tracking|bl\b/i, 20000)
+      if (box) fillInput(box, bookingNo)
+    }
     clickByText(/^Track$/i)
-    await waitFor(() => /Vessel departure\s*\(/i.test(document.body.innerText), 25000)
-    await sleep(1200)
+    const trackBtn = [...document.querySelectorAll('button')].find((el) => /^Track$/i.test((el.textContent || '').trim()))
+    if (trackBtn instanceof HTMLElement) trackBtn.click()
+    await waitFor(
+      () => /Vessel departure\s*\(|Shipment details|not found|no result/i.test(document.body.innerText),
+      30000,
+    )
+    await sleep(1500)
   }
 
   async function runEvergreen(bookingNo) {

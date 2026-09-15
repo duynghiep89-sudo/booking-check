@@ -1,12 +1,10 @@
-Cài Booking Check Helper 0.2.0 (bản ổn định — parser lúc “tạm ổn rồi”)
+Cai Booking Check Helper 0.2.1
 
-Local (Playwright): KHÔNG cần extension
-  http://localhost:5187/booking-check/
-  npm run dev
+Local (Playwright): http://localhost:5187/  — KHONG can extension
 
-Internet: cần extension
-1. Giải nén ZIP → chrome://extensions → Developer mode → Load unpacked
-2. Chọn thư mục có manifest.json (version 0.2.0)
-3. Mở https://duynghiep89-sudo.github.io/booking-check/ → F5 → Check
+Internet:
+1. Xoa extension cu
+2. Load unpacked thu muc co manifest.json (version 0.2.1)
+3. Mo https://duynghiep89-sudo.github.io/booking-check/ → Ctrl+F5 → Check
 
-Cửa sổ hãng mở landing SẠCH (không kèm số booking trên URL lúc mở).
+Maersk: mo thang https://www.maersk.com/tracking/{booking} (dung cho hãng này).
